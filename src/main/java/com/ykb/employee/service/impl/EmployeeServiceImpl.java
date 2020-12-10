@@ -18,6 +18,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public void migrateEmployees() {
+        int totalCount = (int) employeeRepository.count();
         List<Employee> employeeList = employeeRepository.getAllByOrderByIdAscAndStartDateDesc();
 
         List<List<Employee>> partitionList = ListUtils.partition(employeeList, 5);
@@ -48,6 +49,32 @@ public class EmployeeServiceImpl implements EmployeeService {
 
             previousList = currentList;
         }
+
+        iterator = resultPartitionList.iterator();
+        previousList = null;
+
+        if (iterator.hasNext()) previousList = iterator.next(); // previous listeyi al
+        int totalLength = previousList.size();
+
+        while (iterator.hasNext()) {
+            List<Employee> currentList = iterator.next(); // next listeyi al
+
+            Employee lastEmployee = previousList.get(previousList.size() - 1);
+
+            Optional<Employee> any = currentList.stream()
+                    .filter(employee -> employee.getId().equals(lastEmployee.getId()))
+                    .findAny();
+
+            if (any.isPresent())
+                throw new RuntimeException();
+
+            totalLength = totalLength + currentList.size();
+
+            previousList = currentList;
+        }
+
+        if (totalCount != totalLength)
+            throw new RuntimeException();
 
         System.out.println(resultPartitionList);
     }
